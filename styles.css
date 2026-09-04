@@ -308,7 +308,7 @@ button {
   z-index: 10;
   inset: 0;
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: center;
   padding: 14px;
   visibility: hidden;
@@ -520,20 +520,11 @@ button {
 }
 
 .details-section {
-  display: grid;
-  grid-template-columns: 27px minmax(0, 1fr);
-  gap: 11px;
+  display: block;
   padding: 17px;
   border: 1px solid var(--line);
   border-radius: 18px;
   background: rgba(255, 255, 255, 0.72);
-}
-
-.details-section__number {
-  padding-top: 1px;
-  color: #a3a7ac;
-  font-size: 0.65rem;
-  letter-spacing: 0.04em;
 }
 
 .details-section__label {
@@ -731,10 +722,6 @@ button {
 @media (min-width: 700px) {
   .dictionary {
     padding-top: 52px;
-  }
-
-  .modal {
-    align-items: center;
   }
 
   .modal__card {

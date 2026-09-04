@@ -1,0 +1,38 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Профиль доступен только своему владельцу.
+    match /users/{userId} {
+      allow read, create, update: if request.auth != null
+        && request.auth.uid == userId;
+      allow delete: if false;
+
+      // Сохраняем прежний доступ приложения учёта смен.
+      match /shifts/{shiftDate} {
+        allow read, delete: if request.auth != null
+          && request.auth.uid == userId;
+
+        allow create, update: if request.auth != null
+          && request.auth.uid == userId
+          && request.resource.data.date == shiftDate
+          && request.resource.data.startTime is string
+          && request.resource.data.endTime is string;
+      }
+
+      // Каждый пользователь видит и изменяет только собственный словарь.
+      match /words/{wordId} {
+        allow read, delete: if request.auth != null
+          && request.auth.uid == userId;
+
+        allow create, update: if request.auth != null
+          && request.auth.uid == userId
+          && request.resource.data.id == wordId
+          && request.resource.data.word is string
+          && request.resource.data.word.size() > 0
+          && request.resource.data.word.size() <= 80
+          && request.resource.data.createdAt is string;
+      }
+    }
+  }
+}

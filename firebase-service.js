@@ -1,7 +1,9 @@
 import { firebaseConfig } from "./firebase-config.js";
 
 let auth;
+let db;
 let firebaseAuth;
+let firestore;
 let firebaseReadyPromise;
 
 async function ensureFirebaseReady() {
@@ -10,14 +12,17 @@ async function ensureFirebaseReady() {
   if (!firebaseReadyPromise) {
     firebaseReadyPromise = (async () => {
       // Firebase загружается из официального CDN только тогда, когда нужен вход.
-      const [firebaseApp, loadedFirebaseAuth] = await Promise.all([
+      const [firebaseApp, loadedFirebaseAuth, loadedFirestore] = await Promise.all([
         import("https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js"),
         import("https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js"),
+        import("https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js"),
       ]);
 
       firebaseAuth = loadedFirebaseAuth;
+      firestore = loadedFirestore;
       const app = firebaseApp.initializeApp(firebaseConfig);
       auth = firebaseAuth.getAuth(app);
+      db = firestore.getFirestore(app);
 
       // Сессия остаётся на устройстве после закрытия вкладки.
       await firebaseAuth.setPersistence(auth, firebaseAuth.browserLocalPersistence);
@@ -58,4 +63,50 @@ export function observeAuthState(callback) {
     isActive = false;
     unsubscribe();
   };
+}
+
+export async function loadCloudWords(userId) {
+  await ensureFirebaseReady();
+  const snapshot = await firestore.getDocs(
+    firestore.collection(db, "users", userId, "words"),
+  );
+
+  return snapshot.docs.map((wordDocument) => wordDocument.data());
+}
+
+export async function saveCloudWord(userId, word) {
+  await ensureFirebaseReady();
+  return firestore.setDoc(
+    firestore.doc(db, "users", userId, "words", word.id),
+    {
+      id: word.id,
+      word: word.word,
+      createdAt: word.createdAt,
+      updatedAt: firestore.serverTimestamp(),
+    },
+  );
+}
+
+export async function deleteCloudWord(userId, wordId) {
+  await ensureFirebaseReady();
+  return firestore.deleteDoc(
+    firestore.doc(db, "users", userId, "words", wordId),
+  );
+}
+
+export async function uploadCloudWords(userId, words) {
+  await ensureFirebaseReady();
+  if (words.length === 0) return;
+
+  const batch = firestore.writeBatch(db);
+  words.forEach((word) => {
+    batch.set(firestore.doc(db, "users", userId, "words", word.id), {
+      id: word.id,
+      word: word.word,
+      createdAt: word.createdAt,
+      updatedAt: firestore.serverTimestamp(),
+    });
+  });
+
+  return batch.commit();
 }

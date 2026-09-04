@@ -1,7 +1,11 @@
 import {
+  deleteCloudWord,
+  loadCloudWords,
   loginWithGoogle,
   logoutAccount,
   observeAuthState,
+  saveCloudWord,
+  uploadCloudWords,
 } from "./firebase-service.js";
 
 // Ключ — это имя ячейки, в которой браузер хранит наш список слов.
@@ -53,6 +57,13 @@ const profileName = document.querySelector("#profileName");
 const profileEmail = document.querySelector("#profileEmail");
 const profileMessage = document.querySelector("#profileMessage");
 
+// Стартовое слово показывает возможности словаря даже новому пользователю.
+const STARTER_WORD = {
+  id: "starter-hada",
+  word: "하다",
+  createdAt: "2026-09-04T00:00:00.000Z",
+};
+
 // При запуске получаем прежние слова из памяти браузера.
 let words = loadWords();
 let selectedWordId = null;
@@ -93,11 +104,13 @@ const DEMO_WORD_DETAILS = {
 function loadWords() {
   try {
     const savedWords = JSON.parse(localStorage.getItem(STORAGE_KEY));
-    return Array.isArray(savedWords) ? savedWords : [];
+    return Array.isArray(savedWords) && savedWords.length > 0
+      ? savedWords
+      : [{ ...STARTER_WORD }];
   } catch (error) {
-    // Если сохранённые данные повреждены, начинаем с пустого списка.
+    // Если данные повреждены, оставляем пользователю стартовое слово.
     console.warn("Не удалось прочитать сохранённые слова:", error);
-    return [];
+    return [{ ...STARTER_WORD }];
   }
 }
 
@@ -194,7 +207,7 @@ function closeProfile() {
   openProfileButton.focus();
 }
 
-function showCurrentUser(user) {
+async function showCurrentUser(user) {
   currentUser = user;
   const isLoggedIn = Boolean(user);
 
@@ -208,10 +221,43 @@ function showCurrentUser(user) {
     profilePhoto.src = user.photoURL || "";
     profilePhoto.hidden = !user.photoURL;
     profileAvatar.src = user.photoURL || "";
+
+    profileMessage.textContent = "Синхронизируем словарь…";
+    try {
+      await syncWordsWithCloud(user.uid);
+      profileMessage.textContent = "Словарь синхронизирован";
+    } catch (error) {
+      console.error("Не удалось синхронизировать словарь:", error);
+      profileMessage.textContent = "Не удалось загрузить облачный словарь";
+    }
   } else {
     profilePhoto.src = "";
     profileAvatar.src = "";
   }
+}
+
+async function syncWordsWithCloud(userId) {
+  const cloudWords = await loadCloudWords(userId);
+  const combinedWords = [...cloudWords, ...words];
+  const uniqueWords = new Map();
+
+  // Сравниваем текст без учёта регистра, чтобы одно слово не загрузилось дважды.
+  combinedWords.forEach((item) => {
+    const normalizedWord = item.word.trim().toLocaleLowerCase();
+    if (normalizedWord && !uniqueWords.has(normalizedWord)) {
+      uniqueWords.set(normalizedWord, item);
+    }
+  });
+
+  words = [...uniqueWords.values()].sort(
+    (firstWord, secondWord) =>
+      new Date(secondWord.createdAt) - new Date(firstWord.createdAt),
+  );
+
+  // STARTER_WORD уже находится в локальном списке и попадёт в облако первым входом.
+  await uploadCloudWords(userId, words);
+  saveWords();
+  renderWords();
 }
 
 async function handleGoogleLogin() {
@@ -247,14 +293,24 @@ async function handleLogout() {
   }
 }
 
-function deleteSelectedWord() {
+async function deleteSelectedWord() {
   if (!selectedWordId) return;
 
+  const wordIdToDelete = selectedWordId;
+
   // Оставляем в списке все слова, кроме выбранного пользователем.
-  words = words.filter((item) => item.id !== selectedWordId);
+  words = words.filter((item) => item.id !== wordIdToDelete);
   saveWords();
   closeWordDetails();
   renderWords();
+
+  if (currentUser) {
+    try {
+      await deleteCloudWord(currentUser.uid, wordIdToDelete);
+    } catch (error) {
+      console.error("Не удалось удалить слово из облака:", error);
+    }
+  }
 }
 
 // Корейские слоги в Unicode хранятся как цельные символы: например, "하".
@@ -368,23 +424,32 @@ function renderWords() {
   }
 }
 
-function addWord(event) {
+async function addWord(event) {
   event.preventDefault();
 
   const newWord = wordInput.value.trim();
   if (!newWord) return;
 
   // Новое слово добавляем в начало, чтобы оно сразу было видно пользователю.
-  words.unshift({
+  const newWordItem = {
     id: crypto.randomUUID(),
     word: newWord,
     createdAt: new Date().toISOString(),
-  });
+  };
+  words.unshift(newWordItem);
 
   saveWords();
   searchInput.value = "";
   renderWords();
   closeModal();
+
+  if (currentUser) {
+    try {
+      await saveCloudWord(currentUser.uid, newWordItem);
+    } catch (error) {
+      console.error("Не удалось сохранить слово в облаке:", error);
+    }
+  }
 }
 
 openModalButton.addEventListener("click", openModal);
