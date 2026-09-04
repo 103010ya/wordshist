@@ -1,3 +1,9 @@
+import {
+  loginWithGoogle,
+  logoutAccount,
+  observeAuthState,
+} from "./firebase-service.js";
+
 // Ключ — это имя ячейки, в которой браузер хранит наш список слов.
 const STORAGE_KEY = "wordshistWords";
 
@@ -19,6 +25,12 @@ const wordDetailsBackdrop = document.querySelector("#wordDetailsBackdrop");
 const detailsWord = document.querySelector("#detailsWord");
 const deleteWordButton = document.querySelector("#deleteWordButton");
 const closeDetailsButton = document.querySelector("#closeDetailsButton");
+const requestTranslationButton = document.querySelector(
+  "#requestTranslationButton",
+);
+const translationRequestMessage = document.querySelector(
+  "#translationRequestMessage",
+);
 const detailsTranslation = document.querySelector("#detailsTranslation");
 const detailsMeaning = document.querySelector("#detailsMeaning");
 const detailsFormality = document.querySelector("#detailsFormality");
@@ -27,10 +39,24 @@ const exampleKoreanTexts = document.querySelectorAll("[data-example-korean]");
 const exampleTranslations = document.querySelectorAll(
   "[data-example-translation]",
 );
+const openProfileButton = document.querySelector("#openProfileButton");
+const profileAvatar = document.querySelector("#profileAvatar");
+const profileModal = document.querySelector("#profileModal");
+const profileBackdrop = document.querySelector("#profileBackdrop");
+const closeProfileButton = document.querySelector("#closeProfileButton");
+const googleLoginButton = document.querySelector("#googleLoginButton");
+const logoutButton = document.querySelector("#logoutButton");
+const profileGuestView = document.querySelector("#profileGuestView");
+const profileUserView = document.querySelector("#profileUserView");
+const profilePhoto = document.querySelector("#profilePhoto");
+const profileName = document.querySelector("#profileName");
+const profileEmail = document.querySelector("#profileEmail");
+const profileMessage = document.querySelector("#profileMessage");
 
 // При запуске получаем прежние слова из памяти браузера.
 let words = loadWords();
 let selectedWordId = null;
+let currentUser = null;
 
 // Временный учебный разбор. Позже такие данные будет возвращать API.
 const DEMO_WORD_DETAILS = {
@@ -102,11 +128,22 @@ function openWordDetails(wordId) {
 
   selectedWordId = wordId;
   detailsWord.textContent = selectedWord.word;
+  translationRequestMessage.textContent = "";
   renderWordDetails(selectedWord.word);
   wordDetailsModal.classList.add("modal--open");
   wordDetailsModal.setAttribute("aria-hidden", "false");
   document.body.classList.add("modal-open");
   deleteWordButton.focus();
+}
+
+function requestWordTranslation() {
+  const selectedWord = words.find((item) => item.id === selectedWordId);
+  if (!selectedWord) return;
+
+  // Здесь позже появится единственный вызов нашего серверного API.
+  // До подключения API нажатие не расходует деньги и только показывает подсказку.
+  translationRequestMessage.textContent =
+    `Запрос для «${selectedWord.word}» будет доступен после подключения API.`;
 }
 
 function renderWordDetails(word) {
@@ -141,6 +178,73 @@ function closeWordDetails() {
   document.body.classList.remove("modal-open");
   selectedWordId = null;
   openModalButton.focus();
+}
+
+function openProfile() {
+  profileModal.classList.add("modal--open");
+  profileModal.setAttribute("aria-hidden", "false");
+  document.body.classList.add("modal-open");
+}
+
+function closeProfile() {
+  profileModal.classList.remove("modal--open");
+  profileModal.setAttribute("aria-hidden", "true");
+  document.body.classList.remove("modal-open");
+  profileMessage.textContent = "";
+  openProfileButton.focus();
+}
+
+function showCurrentUser(user) {
+  currentUser = user;
+  const isLoggedIn = Boolean(user);
+
+  profileGuestView.hidden = isLoggedIn;
+  profileUserView.hidden = !isLoggedIn;
+  profileAvatar.hidden = !isLoggedIn || !user.photoURL;
+
+  if (isLoggedIn) {
+    profileName.textContent = user.displayName || "Пользователь";
+    profileEmail.textContent = user.email || "";
+    profilePhoto.src = user.photoURL || "";
+    profilePhoto.hidden = !user.photoURL;
+    profileAvatar.src = user.photoURL || "";
+  } else {
+    profilePhoto.src = "";
+    profileAvatar.src = "";
+  }
+}
+
+async function handleGoogleLogin() {
+  googleLoginButton.disabled = true;
+  profileMessage.textContent = "Открываем вход через Google…";
+
+  try {
+    await loginWithGoogle();
+    profileMessage.textContent = "Вход выполнен";
+  } catch (error) {
+    console.error("Не удалось войти через Google:", error);
+    profileMessage.textContent =
+      error.code === "auth/unauthorized-domain"
+        ? "Нужно разрешить домен сайта в настройках Firebase"
+        : "Не удалось войти. Проверьте настройки Firebase";
+  } finally {
+    googleLoginButton.disabled = false;
+  }
+}
+
+async function handleLogout() {
+  logoutButton.disabled = true;
+  profileMessage.textContent = "Выходим из профиля…";
+
+  try {
+    await logoutAccount();
+    profileMessage.textContent = "Вы вышли из профиля";
+  } catch (error) {
+    console.error("Не удалось выйти:", error);
+    profileMessage.textContent = "Не удалось выйти из профиля";
+  } finally {
+    logoutButton.disabled = false;
+  }
 }
 
 function deleteSelectedWord() {
@@ -233,11 +337,20 @@ function renderWords() {
     word.className = "word-card__word";
     word.textContent = item.word;
 
-    const status = document.createElement("span");
-    status.className = "word-card__status";
-    status.textContent = "Ожидает разбора";
+    const wordContent = document.createElement("span");
+    wordContent.className = "word-card__content";
+    wordContent.append(word);
 
-    card.append(word, status);
+    // Если для слова уже есть разбор, показываем перевод прямо в общем списке.
+    const details = DEMO_WORD_DETAILS[item.word];
+    if (details?.translation) {
+      const translation = document.createElement("span");
+      translation.className = "word-card__translation";
+      translation.textContent = details.translation;
+      wordContent.append(translation);
+    }
+
+    card.append(wordContent);
     wordsList.append(card);
   });
 
@@ -282,6 +395,12 @@ searchInput.addEventListener("input", renderWords);
 wordDetailsBackdrop.addEventListener("click", closeWordDetails);
 closeDetailsButton.addEventListener("click", closeWordDetails);
 deleteWordButton.addEventListener("click", deleteSelectedWord);
+requestTranslationButton.addEventListener("click", requestWordTranslation);
+openProfileButton.addEventListener("click", openProfile);
+profileBackdrop.addEventListener("click", closeProfile);
+closeProfileButton.addEventListener("click", closeProfile);
+googleLoginButton.addEventListener("click", handleGoogleLogin);
+logoutButton.addEventListener("click", handleLogout);
 
 // Escape — привычный способ закрыть всплывающее окно с клавиатуры.
 document.addEventListener("keydown", (event) => {
@@ -295,7 +414,14 @@ document.addEventListener("keydown", (event) => {
   ) {
     closeWordDetails();
   }
+
+  if (event.key === "Escape" && profileModal.classList.contains("modal--open")) {
+    closeProfile();
+  }
 });
+
+// Firebase сообщает нам о входе и выходе пользователя даже после перезагрузки.
+observeAuthState(showCurrentUser);
 
 // Первая отрисовка выполняется сразу после загрузки страницы.
 renderWords();

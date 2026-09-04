@@ -43,6 +43,21 @@
             <path d="M12 5v14M5 12h14"></path>
           </svg>
         </button>
+
+        <!-- Кнопка пользователя открывает окно входа и профиля. -->
+        <button
+          id="openProfileButton"
+          class="profile-button"
+          type="button"
+          aria-label="Открыть профиль"
+          aria-haspopup="dialog"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="8.5" r="3.5"></circle>
+            <path d="M5.5 20c.7-3.6 3-5.5 6.5-5.5s5.8 1.9 6.5 5.5"></path>
+          </svg>
+          <img id="profileAvatar" class="profile-button__avatar" alt="" hidden />
+        </button>
       </div>
 
       <!-- Сюда JavaScript добавляет карточки сохранённых слов. -->
@@ -128,10 +143,30 @@
       >
         <div class="modal__handle" aria-hidden="true"></div>
 
-        <!-- Удаление уже работает, но оформление остаётся спокойным и чёрно-белым. -->
-        <button id="deleteWordButton" class="delete-word-button" type="button">
-          Удалить
+        <button
+          id="closeDetailsButton"
+          class="details-close-button"
+          type="button"
+          aria-label="Закрыть карточку слова"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="m7 7 10 10M17 7 7 17"></path>
+          </svg>
         </button>
+
+        <!-- Запрос к API позже будет запускаться только вручную этой кнопкой. -->
+        <div class="details-actions">
+          <button id="deleteWordButton" class="details-action-button" type="button">
+            Удалить
+          </button>
+          <button
+            id="requestTranslationButton"
+            class="details-action-button"
+            type="button"
+          >
+            Запросить перевод
+          </button>
+        </div>
 
         <div class="details-card__heading">
           <h2 id="detailsWord">Слово</h2>
@@ -216,12 +251,69 @@
           </section>
         </div>
 
-        <button id="closeDetailsButton" class="button button--light details-close" type="button">
+        <p id="translationRequestMessage" class="translation-request-message" role="status" aria-live="polite"></p>
+      </section>
+    </div>
+
+    <!-- Окно входа через Google и краткой информации о пользователе. -->
+    <div id="profileModal" class="modal" aria-hidden="true">
+      <button
+        id="profileBackdrop"
+        class="modal__backdrop"
+        type="button"
+        aria-label="Закрыть профиль"
+        tabindex="-1"
+      ></button>
+
+      <section
+        class="modal__card profile-card"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="profileTitle"
+      >
+        <div class="modal__handle" aria-hidden="true"></div>
+        <h2 id="profileTitle">Профиль</h2>
+
+        <!-- Этот блок виден, пока пользователь не вошёл. -->
+        <div id="profileGuestView" class="profile-view">
+          <div class="profile-card__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <circle cx="12" cy="8.5" r="3.5"></circle>
+              <path d="M5.5 20c.7-3.6 3-5.5 6.5-5.5s5.8 1.9 6.5 5.5"></path>
+            </svg>
+          </div>
+          <p class="profile-card__description">
+            Войдите, чтобы позже сохранять словарь в облаке и открывать его на
+            разных устройствах.
+          </p>
+          <button id="googleLoginButton" class="google-login-button" type="button">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path fill="#4285f4" d="M21.6 12.2c0-.7-.1-1.4-.2-2H12v3.9h5.4a4.7 4.7 0 0 1-2 3v2.5h3.3c1.9-1.8 2.9-4.4 2.9-7.4Z" />
+              <path fill="#34a853" d="M12 22c2.7 0 5-.9 6.7-2.4l-3.3-2.5c-.9.6-2.1 1-3.4 1a5.9 5.9 0 0 1-5.5-4.1H3.1v2.6A10 10 0 0 0 12 22Z" />
+              <path fill="#fbbc05" d="M6.5 14a6 6 0 0 1 0-3.9V7.5H3.1a10 10 0 0 0 0 9.1L6.5 14Z" />
+              <path fill="#ea4335" d="M12 5.9c1.5 0 2.8.5 3.8 1.5l2.9-2.8A9.7 9.7 0 0 0 3.1 7.5l3.4 2.6A5.9 5.9 0 0 1 12 5.9Z" />
+            </svg>
+            <span>Войти через Google</span>
+          </button>
+        </div>
+
+        <!-- После входа этот блок показывает данные Google-аккаунта. -->
+        <div id="profileUserView" class="profile-view" hidden>
+          <img id="profilePhoto" class="profile-card__photo" alt="Фото профиля" />
+          <p id="profileName" class="profile-card__name">Пользователь</p>
+          <p id="profileEmail" class="profile-card__email"></p>
+          <button id="logoutButton" class="button button--light profile-logout" type="button">
+            Выйти
+          </button>
+        </div>
+
+        <p id="profileMessage" class="profile-message" role="status" aria-live="polite"></p>
+        <button id="closeProfileButton" class="button button--light profile-close" type="button">
           Закрыть
         </button>
       </section>
     </div>
 
-    <script src="script.js"></script>
+    <script type="module" src="script.js"></script>
   </body>
 </html>

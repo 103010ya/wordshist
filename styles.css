@@ -62,7 +62,7 @@ button {
 /* Поиск и плюс образуют одну строку даже на небольшом телефоне. */
 .top-actions {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 54px;
+  grid-template-columns: minmax(0, 1fr) 54px 54px;
   align-items: center;
   gap: 10px;
   margin-bottom: 46px;
@@ -151,6 +151,48 @@ button {
   stroke-width: 1.65;
 }
 
+.profile-button {
+  position: relative;
+  display: grid;
+  width: 54px;
+  height: 54px;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  border-radius: 18px;
+  place-items: center;
+  color: var(--text);
+  background: var(--surface);
+  box-shadow: 0 12px 30px rgba(29, 35, 42, 0.09);
+  cursor: pointer;
+}
+
+.profile-button:active {
+  transform: scale(0.95);
+}
+
+.profile-button:focus-visible {
+  outline: 3px solid rgba(23, 25, 28, 0.15);
+  outline-offset: 3px;
+}
+
+.profile-button > svg {
+  width: 23px;
+  height: 23px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-width: 1.55;
+}
+
+.profile-button__avatar {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 .words-heading {
   display: flex;
   align-items: center;
@@ -216,6 +258,12 @@ button {
   outline-offset: 3px;
 }
 
+.word-card__content {
+  display: grid;
+  min-width: 0;
+  gap: 5px;
+}
+
 .word-card__word {
   margin: 0;
   overflow-wrap: anywhere;
@@ -223,10 +271,11 @@ button {
   font-weight: 450;
 }
 
-.word-card__status {
-  flex: 0 0 auto;
+.word-card__translation {
+  overflow-wrap: anywhere;
   color: var(--muted);
-  font-size: 0.72rem;
+  font-size: 0.76rem;
+  line-height: 1.4;
 }
 
 .empty-state {
@@ -389,10 +438,16 @@ button {
   display: none;
 }
 
-.delete-word-button {
-  display: block;
-  min-height: 34px;
+.details-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
   margin: 0 auto 26px;
+}
+
+.details-action-button {
+  min-height: 34px;
   padding: 0 16px;
   border: 0;
   border-radius: 999px;
@@ -403,13 +458,44 @@ button {
   cursor: pointer;
 }
 
-.delete-word-button:active {
+.details-action-button:active {
   transform: scale(0.95);
 }
 
-.delete-word-button:focus-visible {
+.details-action-button:focus-visible,
+.details-close-button:focus-visible {
   outline: 3px solid rgba(23, 25, 28, 0.18);
   outline-offset: 3px;
+}
+
+.details-close-button {
+  position: absolute;
+  z-index: 2;
+  top: 17px;
+  right: 17px;
+  display: grid;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  place-items: center;
+  color: #767b81;
+  background: rgba(255, 255, 255, 0.8);
+  cursor: pointer;
+}
+
+.details-close-button:active {
+  transform: scale(0.94);
+}
+
+.details-close-button svg {
+  width: 17px;
+  height: 17px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-width: 1.7;
 }
 
 .details-card__heading {
@@ -527,9 +613,118 @@ button {
   font-size: 0.72rem;
 }
 
-.details-close {
+.translation-request-message {
+  min-height: 17px;
+  margin: 14px 0 0;
+  color: var(--muted);
+  text-align: center;
+  font-size: 0.7rem;
+  line-height: 1.4;
+}
+
+/* Окно профиля использует те же формы, тени и цвета, что и словарь. */
+.profile-card h2 {
+  text-align: center;
+}
+
+.profile-view {
+  padding-top: 20px;
+  text-align: center;
+}
+
+.profile-view[hidden] {
+  display: none;
+}
+
+.profile-card__icon {
+  display: grid;
+  width: 62px;
+  height: 62px;
+  margin: 0 auto 17px;
+  border-radius: 21px;
+  place-items: center;
+  color: white;
+  background: var(--dark);
+  box-shadow: var(--dark-glow);
+}
+
+.profile-card__icon svg {
+  width: 27px;
+  height: 27px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-width: 1.6;
+}
+
+.profile-card__description {
+  max-width: 350px;
+  margin: 0 auto 21px;
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.55;
+}
+
+.google-login-button {
+  display: flex;
   width: 100%;
-  margin-top: 18px;
+  min-height: 56px;
+  align-items: center;
+  justify-content: center;
+  gap: 11px;
+  border: 1px solid var(--line);
+  border-radius: 17px;
+  background: white;
+  box-shadow: 0 10px 28px rgba(29, 35, 42, 0.07);
+  cursor: pointer;
+}
+
+.google-login-button:active {
+  transform: scale(0.98);
+}
+
+.google-login-button svg {
+  width: 20px;
+  height: 20px;
+}
+
+.profile-card__photo {
+  width: 72px;
+  height: 72px;
+  margin-bottom: 13px;
+  border: 4px solid white;
+  border-radius: 50%;
+  object-fit: cover;
+  box-shadow: 0 10px 28px rgba(29, 35, 42, 0.12);
+}
+
+.profile-card__name {
+  margin: 0 0 5px;
+  font-size: 1.05rem;
+}
+
+.profile-card__email {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.76rem;
+}
+
+.profile-logout {
+  width: 100%;
+  margin-top: 22px;
+}
+
+.profile-message {
+  min-height: 18px;
+  margin: 14px 0 0;
+  color: var(--muted);
+  text-align: center;
+  font-size: 0.72rem;
+}
+
+.profile-close {
+  width: 100%;
+  margin-top: 4px;
 }
 
 /* На широком экране окно показывается по центру, а контент остаётся компактным. */
