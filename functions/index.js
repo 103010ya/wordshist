@@ -1,4 +1,4 @@
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI, ThinkingLevel } from "@google/genai";
 import { initializeApp } from "firebase-admin/app";
 import { FieldValue, getFirestore } from "firebase-admin/firestore";
 import { defineSecret } from "firebase-functions/params";
@@ -117,7 +117,8 @@ function wait(milliseconds) {
 }
 
 async function generateDetailsWithRetry(ai, word) {
-  const retryDelays = [0, 1500, 3500];
+  // Две короткие попытки быстрее, чем долгое ожидание перегруженной модели.
+  const retryDelays = [0, 1200];
 
   for (let attempt = 0; attempt < retryDelays.length; attempt += 1) {
     if (retryDelays[attempt] > 0) {
@@ -126,12 +127,15 @@ async function generateDetailsWithRetry(ai, word) {
 
     try {
       const response = await ai.models.generateContent({
-        // Google закрыл старую модель для новых API-ключей.
-        model: "gemini-3.6-flash",
+        // Flash-Lite лучше подходит для быстрых переводов и коротких разборов.
+        model: "gemini-3.5-flash-lite",
         contents: createPrompt(word),
         config: {
           temperature: 0.25,
-          maxOutputTokens: 2200,
+          maxOutputTokens: 1600,
+          thinkingConfig: {
+            thinkingLevel: ThinkingLevel.MINIMAL,
+          },
           responseMimeType: "application/json",
           responseJsonSchema: WORD_DETAILS_SCHEMA,
         },
@@ -150,7 +154,7 @@ async function generateDetailsWithRetry(ai, word) {
   throw new Error("Не удалось получить ответ Gemini");
 }
 
-async function checkDailyLimit(userId) {
+async function checkDailyLimit(userId, shouldIncrement = false) {
   const today = new Date().toISOString().slice(0, 10);
   const usageReference = db.doc(`aiUsage/${userId}`);
 
@@ -167,11 +171,14 @@ async function checkDailyLimit(userId) {
       );
     }
 
-    transaction.set(usageReference, {
-      date: today,
-      count: requestCount + 1,
-      updatedAt: FieldValue.serverTimestamp(),
-    });
+    // Счётчик увеличивается только после успешного ответа Gemini.
+    if (shouldIncrement) {
+      transaction.set(usageReference, {
+        date: today,
+        count: requestCount + 1,
+        updatedAt: FieldValue.serverTimestamp(),
+      });
+    }
   });
 }
 
@@ -179,7 +186,7 @@ export const analyzeKoreanWord = onCall(
   {
     region: "asia-northeast3",
     secrets: [geminiApiKey],
-    timeoutSeconds: 150,
+    timeoutSeconds: 60,
     memory: "256MiB",
     maxInstances: 2,
   },
@@ -214,6 +221,7 @@ export const analyzeKoreanWord = onCall(
         analyzedAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp(),
       });
+      await checkDailyLimit(request.auth.uid, true);
 
       return details;
     } catch (error) {
