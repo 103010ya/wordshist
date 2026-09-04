@@ -4,6 +4,8 @@ let auth;
 let db;
 let firebaseAuth;
 let firestore;
+let firebaseFunctions;
+let functions;
 let firebaseReadyPromise;
 
 async function ensureFirebaseReady() {
@@ -12,17 +14,25 @@ async function ensureFirebaseReady() {
   if (!firebaseReadyPromise) {
     firebaseReadyPromise = (async () => {
       // Firebase загружается из официального CDN только тогда, когда нужен вход.
-      const [firebaseApp, loadedFirebaseAuth, loadedFirestore] = await Promise.all([
+      const [
+        firebaseApp,
+        loadedFirebaseAuth,
+        loadedFirestore,
+        loadedFunctions,
+      ] = await Promise.all([
         import("https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js"),
         import("https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js"),
         import("https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js"),
+        import("https://www.gstatic.com/firebasejs/12.15.0/firebase-functions.js"),
       ]);
 
       firebaseAuth = loadedFirebaseAuth;
       firestore = loadedFirestore;
+      firebaseFunctions = loadedFunctions;
       const app = firebaseApp.initializeApp(firebaseConfig);
       auth = firebaseAuth.getAuth(app);
       db = firestore.getFirestore(app);
+      functions = firebaseFunctions.getFunctions(app, "asia-northeast3");
 
       // Сессия остаётся на устройстве после закрытия вкладки.
       await firebaseAuth.setPersistence(auth, firebaseAuth.browserLocalPersistence);
@@ -82,6 +92,7 @@ export async function saveCloudWord(userId, word) {
       id: word.id,
       word: word.word,
       createdAt: word.createdAt,
+      details: word.details || null,
       updatedAt: firestore.serverTimestamp(),
     },
   );
@@ -104,9 +115,20 @@ export async function uploadCloudWords(userId, words) {
       id: word.id,
       word: word.word,
       createdAt: word.createdAt,
+      details: word.details || null,
       updatedAt: firestore.serverTimestamp(),
     });
   });
 
   return batch.commit();
+}
+
+export async function requestCloudTranslation(wordId) {
+  await ensureFirebaseReady();
+  const analyzeKoreanWord = firebaseFunctions.httpsCallable(
+    functions,
+    "analyzeKoreanWord",
+  );
+  const response = await analyzeKoreanWord({ wordId });
+  return response.data;
 }

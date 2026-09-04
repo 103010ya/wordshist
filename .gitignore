@@ -1,0 +1,11 @@
+# Установленные зависимости создаются командой npm install и не публикуются.
+functions/node_modules/
+
+# Локальные журналы Firebase не нужны в репозитории.
+firebase-debug.log
+functions/firebase-debug.log
+
+# Локальные файлы с секретами никогда не отправляются на GitHub.
+functions/.env
+functions/.env.*
+functions/.secret.local

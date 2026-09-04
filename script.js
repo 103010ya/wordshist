@@ -4,6 +4,7 @@ import {
   loginWithGoogle,
   logoutAccount,
   observeAuthState,
+  requestCloudTranslation,
   saveCloudWord,
   uploadCloudWords,
 } from "./firebase-service.js";
@@ -142,25 +143,59 @@ function openWordDetails(wordId) {
   selectedWordId = wordId;
   detailsWord.textContent = selectedWord.word;
   translationRequestMessage.textContent = "";
-  renderWordDetails(selectedWord.word);
+  renderWordDetails(selectedWord);
   wordDetailsModal.classList.add("modal--open");
   wordDetailsModal.setAttribute("aria-hidden", "false");
   document.body.classList.add("modal-open");
   deleteWordButton.focus();
 }
 
-function requestWordTranslation() {
+async function requestWordTranslation() {
   const selectedWord = words.find((item) => item.id === selectedWordId);
   if (!selectedWord) return;
 
-  // Здесь позже появится единственный вызов нашего серверного API.
-  // До подключения API нажатие не расходует деньги и только показывает подсказку.
+  if (!currentUser) {
+    translationRequestMessage.textContent =
+      "Сначала войдите через Google, чтобы запросить перевод.";
+    return;
+  }
+
+  requestTranslationButton.disabled = true;
+  requestTranslationButton.textContent = "Переводим…";
   translationRequestMessage.textContent =
-    `Запрос для «${selectedWord.word}» будет доступен после подключения API.`;
+    "Помощник разбирает слово. Это может занять несколько секунд.";
+
+  try {
+    // Лимитируемый запрос выполняется только здесь и только после нажатия.
+    const details = await requestCloudTranslation(selectedWord.id);
+    selectedWord.details = details;
+    saveWords();
+    renderWordDetails(selectedWord);
+    renderWords();
+    translationRequestMessage.textContent = "Разбор сохранён в вашем словаре.";
+  } catch (error) {
+    console.error("Не удалось получить перевод:", error);
+    translationRequestMessage.textContent = getTranslationErrorMessage(error);
+  } finally {
+    requestTranslationButton.disabled = false;
+    requestTranslationButton.textContent = "Запросить перевод";
+  }
 }
 
-function renderWordDetails(word) {
-  const details = DEMO_WORD_DETAILS[word];
+function getTranslationErrorMessage(error) {
+  if (error.code === "functions/unauthenticated") {
+    return "Сессия закончилась. Войдите через Google ещё раз.";
+  }
+
+  if (error.code === "functions/resource-exhausted") {
+    return "Бесплатный лимит временно закончился. Попробуйте позже.";
+  }
+
+  return "Не удалось получить разбор. Попробуйте ещё раз.";
+}
+
+function renderWordDetails(wordItem) {
+  const details = wordItem.details || DEMO_WORD_DETAILS[wordItem.word];
 
   // Для 하다 показываем готовый пример, для остальных слов — прежний шаблон.
   detailsTranslation.textContent = details?.translation || "Основной перевод слова";
@@ -398,7 +433,7 @@ function renderWords() {
     wordContent.append(word);
 
     // Если для слова уже есть разбор, показываем перевод прямо в общем списке.
-    const details = DEMO_WORD_DETAILS[item.word];
+    const details = item.details || DEMO_WORD_DETAILS[item.word];
     if (details?.translation) {
       const translation = document.createElement("span");
       translation.className = "word-card__translation";
