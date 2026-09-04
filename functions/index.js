@@ -105,6 +105,49 @@ function validateDetails(details) {
   };
 }
 
+function isTemporaryGeminiError(error) {
+  const message = error instanceof Error ? error.message : String(error);
+  return error?.status === 503 || message.includes('"code":503');
+}
+
+function wait(milliseconds) {
+  return new Promise((resolve) => setTimeout(resolve, milliseconds));
+}
+
+async function generateDetailsWithRetry(ai, word) {
+  const retryDelays = [0, 1500, 3500];
+
+  for (let attempt = 0; attempt < retryDelays.length; attempt += 1) {
+    if (retryDelays[attempt] > 0) {
+      await wait(retryDelays[attempt]);
+    }
+
+    try {
+      const response = await ai.models.generateContent({
+        // Google закрыл старую модель для новых API-ключей.
+        model: "gemini-3.6-flash",
+        contents: createPrompt(word),
+        config: {
+          temperature: 0.25,
+          maxOutputTokens: 2200,
+          responseMimeType: "application/json",
+          responseJsonSchema: WORD_DETAILS_SCHEMA,
+        },
+      });
+
+      return validateDetails(JSON.parse(response.text));
+    } catch (error) {
+      const isLastAttempt = attempt === retryDelays.length - 1;
+      if (!isTemporaryGeminiError(error) || isLastAttempt) throw error;
+
+      // Ошибка 503 означает временную перегрузку модели.
+      console.warn(`Gemini is busy, retrying: attempt ${attempt + 2}`);
+    }
+  }
+
+  throw new Error("Не удалось получить ответ Gemini");
+}
+
 async function checkDailyLimit(userId) {
   const today = new Date().toISOString().slice(0, 10);
   const usageReference = db.doc(`aiUsage/${userId}`);
@@ -134,7 +177,7 @@ export const analyzeKoreanWord = onCall(
   {
     region: "asia-northeast3",
     secrets: [geminiApiKey],
-    timeoutSeconds: 60,
+    timeoutSeconds: 150,
     memory: "256MiB",
     maxInstances: 2,
   },
@@ -163,19 +206,7 @@ export const analyzeKoreanWord = onCall(
 
     try {
       const ai = new GoogleGenAI({ apiKey: geminiApiKey.value() });
-      const response = await ai.models.generateContent({
-        // Google закрыл старую модель для новых API-ключей.
-        model: "gemini-3.6-flash",
-        contents: createPrompt(word),
-        config: {
-          temperature: 0.25,
-          maxOutputTokens: 2200,
-          responseMimeType: "application/json",
-          responseJsonSchema: WORD_DETAILS_SCHEMA,
-        },
-      });
-
-      const details = validateDetails(JSON.parse(response.text));
+      const details = await generateDetailsWithRetry(ai, word);
       await wordReference.update({
         details,
         analyzedAt: FieldValue.serverTimestamp(),
@@ -191,6 +222,12 @@ export const analyzeKoreanWord = onCall(
       });
 
       if (error instanceof HttpsError) throw error;
+      if (isTemporaryGeminiError(error)) {
+        throw new HttpsError(
+          "unavailable",
+          "Gemini временно перегружен. Попробуйте немного позже.",
+        );
+      }
       throw new HttpsError(
         "internal",
         "Помощник временно не смог разобрать слово.",
