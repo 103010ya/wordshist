@@ -23,6 +23,9 @@
 html {
   min-width: 320px;
   min-height: 100%;
+  /* iPhone не должен сам увеличивать длинный текст внутри карточки. */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
   background:
     radial-gradient(circle at 50% 22%, rgba(255, 255, 255, 0.98), transparent 34%),
     linear-gradient(180deg, #fafafa 0%, var(--background) 58%, #e9ecef 100%);
@@ -272,10 +275,14 @@ button {
 }
 
 .word-card__translation {
+  display: -webkit-box;
   overflow-wrap: anywhere;
+  overflow: hidden;
   color: var(--muted);
   font-size: 0.76rem;
   line-height: 1.4;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 .empty-state {
@@ -538,6 +545,7 @@ button {
 
 .details-placeholder {
   margin: 0;
+  overflow-wrap: anywhere;
   color: #777c83;
   font-size: 0.82rem;
   line-height: 1.55;
@@ -545,7 +553,7 @@ button {
 
 .formality-row {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
   margin-top: 15px;
@@ -561,7 +569,12 @@ button {
   border-radius: 999px;
   color: #5d6268;
   background: #f0f1f2;
-  white-space: nowrap;
+}
+
+.formality-badge {
+  max-width: 68%;
+  overflow-wrap: anywhere;
+  text-align: right;
 }
 
 .examples-list {
@@ -588,20 +601,27 @@ button {
 }
 
 .example-item__tag {
+  max-width: 68%;
   padding: 4px 7px;
+  overflow-wrap: anywhere;
+  text-align: right;
   font-size: 0.61rem;
 }
 
 .example-item__korean {
   margin: 0 0 4px;
+  overflow-wrap: anywhere;
   color: #5f646a;
   font-size: 0.82rem;
+  line-height: 1.45;
 }
 
 .example-item__translation {
   margin: 0;
+  overflow-wrap: anywhere;
   color: #a0a4a9;
   font-size: 0.72rem;
+  line-height: 1.45;
 }
 
 .translation-request-message {
