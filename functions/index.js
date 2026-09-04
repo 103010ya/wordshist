@@ -164,7 +164,7 @@ async function checkDailyLimit(userId, shouldIncrement = false) {
     const requestCount = previousUsage?.date === today ? previousUsage.count : 0;
 
     // Ограничение защищает бесплатную квоту от случайных повторных запросов.
-    if (requestCount >= 30) {
+    if (requestCount >= 100) {
       throw new HttpsError(
         "resource-exhausted",
         "Дневной лимит переводов исчерпан.",
