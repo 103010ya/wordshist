@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#f5f6f7" />
+    <meta
+      name="description"
+      content="Личный словарь для изучения корейских слов"
+    />
+    <title>Мой словарь</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+
+  <body>
+    <main class="dictionary">
+      <!-- Поиск и добавление стоят в одной компактной верхней строке. -->
+      <div class="top-actions">
+        <div class="search" role="search">
+          <svg class="search__icon" viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="11" cy="11" r="6.5"></circle>
+            <path d="m16 16 4 4"></path>
+          </svg>
+          <input
+            id="searchInput"
+            class="search__input"
+            type="search"
+            placeholder="Найти слово"
+            aria-label="Поиск по словарю"
+            autocomplete="off"
+          />
+        </div>
+
+        <!-- Кнопка открывает окно добавления нового слова. -->
+        <button
+          id="openModalButton"
+          class="add-button"
+          type="button"
+          aria-label="Добавить новое слово"
+          aria-haspopup="dialog"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 5v14M5 12h14"></path>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Сюда JavaScript добавляет карточки сохранённых слов. -->
+      <section class="words-section" aria-labelledby="wordsTitle">
+        <div class="words-heading">
+          <h1 id="wordsTitle">Мои слова</h1>
+          <span id="wordsCount" class="words-count">0</span>
+        </div>
+
+        <div id="wordsList" class="words-list"></div>
+
+        <div id="emptyState" class="empty-state">
+          <p id="emptyStateTitle" class="empty-state__title">
+            Словарь пока пуст
+          </p>
+          <p id="emptyStateText" class="empty-state__text">
+            Нажмите на плюс и сохраните первое корейское слово.
+          </p>
+        </div>
+      </section>
+    </main>
+
+    <!-- Затемнение и всплывающее окно добавления слова. -->
+    <div id="modal" class="modal" aria-hidden="true">
+      <button
+        id="modalBackdrop"
+        class="modal__backdrop"
+        type="button"
+        aria-label="Закрыть окно"
+        tabindex="-1"
+      ></button>
+
+      <section
+        class="modal__card"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="modalTitle"
+      >
+        <div class="modal__handle" aria-hidden="true"></div>
+        <h2 id="modalTitle">Новое слово</h2>
+        <p class="modal__description">
+          Пока мы сохраняем только слово. Подробный разбор и перевод добавим
+          следующим шагом.
+        </p>
+
+        <form id="wordForm" class="word-form">
+          <label class="word-form__label" for="wordInput">Слово</label>
+          <input
+            id="wordInput"
+            class="word-form__input"
+            type="text"
+            placeholder="Например, 설레다"
+            maxlength="80"
+            autocomplete="off"
+            required
+          />
+
+          <div class="word-form__actions">
+            <button id="closeModalButton" class="button button--light" type="button">
+              Отмена
+            </button>
+            <button class="button button--dark" type="submit">Сохранить</button>
+          </div>
+        </form>
+      </section>
+    </div>
+
+    <!-- Окно подробного разбора открывается при нажатии на карточку слова. -->
+    <div id="wordDetailsModal" class="modal" aria-hidden="true">
+      <button
+        id="wordDetailsBackdrop"
+        class="modal__backdrop"
+        type="button"
+        aria-label="Закрыть карточку слова"
+        tabindex="-1"
+      ></button>
+
+      <section
+        class="modal__card details-card"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="detailsWord"
+      >
+        <div class="modal__handle" aria-hidden="true"></div>
+
+        <!-- Удаление уже работает, но оформление остаётся спокойным и чёрно-белым. -->
+        <button id="deleteWordButton" class="delete-word-button" type="button">
+          Удалить
+        </button>
+
+        <div class="details-card__heading">
+          <h2 id="detailsWord">Слово</h2>
+          <p>Подробный разбор</p>
+        </div>
+
+        <!-- Эти блоки — шаблон для будущего ответа от API. -->
+        <div class="details-content">
+          <section class="details-section">
+            <span class="details-section__number">01</span>
+            <div>
+              <span class="details-section__label">Перевод</span>
+              <p id="detailsTranslation" class="details-placeholder">
+                Основной перевод слова
+              </p>
+            </div>
+          </section>
+
+          <section class="details-section">
+            <span class="details-section__number">02</span>
+            <div>
+              <span class="details-section__label">Значение и использование</span>
+              <p id="detailsMeaning" class="details-placeholder">
+                Что означает слово, какой оттенок передаёт и в каких ситуациях
+                употребляется.
+              </p>
+
+              <div class="formality-row">
+                <span>Формальность</span>
+                <span id="detailsFormality" class="formality-badge">Уровень</span>
+              </div>
+            </div>
+          </section>
+
+          <section class="details-section details-section--examples">
+            <span class="details-section__number">03</span>
+            <div>
+              <span class="details-section__label">Примеры</span>
+              <p class="details-placeholder">
+                Четыре коротких предложения на разные темы и с разными формами
+                слова.
+              </p>
+
+              <div class="examples-list">
+                <article class="example-item">
+                  <div class="example-item__heading">
+                    <span>Пример 1</span>
+                    <span class="example-item__tag" data-example-tag>Настоящее · базовое</span>
+                  </div>
+                  <p class="example-item__korean" data-example-korean>Корейское предложение</p>
+                  <p class="example-item__translation" data-example-translation>Перевод предложения</p>
+                </article>
+
+                <article class="example-item">
+                  <div class="example-item__heading">
+                    <span>Пример 2</span>
+                    <span class="example-item__tag" data-example-tag>Прошедшее</span>
+                  </div>
+                  <p class="example-item__korean" data-example-korean>Корейское предложение</p>
+                  <p class="example-item__translation" data-example-translation>Перевод предложения</p>
+                </article>
+
+                <article class="example-item">
+                  <div class="example-item__heading">
+                    <span>Пример 3</span>
+                    <span class="example-item__tag" data-example-tag>Будущее</span>
+                  </div>
+                  <p class="example-item__korean" data-example-korean>Корейское предложение</p>
+                  <p class="example-item__translation" data-example-translation>Перевод предложения</p>
+                </article>
+
+                <article class="example-item">
+                  <div class="example-item__heading">
+                    <span>Пример 4</span>
+                    <span class="example-item__tag" data-example-tag>Другая форма</span>
+                  </div>
+                  <p class="example-item__korean" data-example-korean>Корейское предложение</p>
+                  <p class="example-item__translation" data-example-translation>Перевод предложения</p>
+                </article>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <button id="closeDetailsButton" class="button button--light details-close" type="button">
+          Закрыть
+        </button>
+      </section>
+    </div>
+
+    <script src="script.js"></script>
+  </body>
+</html>

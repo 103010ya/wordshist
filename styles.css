@@ -1,0 +1,561 @@
+/* Основные цвета и размеры собраны здесь, чтобы стиль было легко менять. */
+:root {
+  color-scheme: light;
+  --background: #f4f5f6;
+  --surface: rgba(255, 255, 255, 0.78);
+  --surface-solid: #ffffff;
+  --text: #17191c;
+  --muted: #858a91;
+  --line: rgba(23, 25, 28, 0.08);
+  --dark: #17191c;
+  --dark-hover: #292c30;
+  --soft-shadow: 0 20px 55px rgba(29, 35, 42, 0.09);
+  --dark-glow: 0 14px 35px rgba(23, 25, 28, 0.2);
+  --large-radius: 28px;
+  --medium-radius: 20px;
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html {
+  min-width: 320px;
+  min-height: 100%;
+  background:
+    radial-gradient(circle at 50% 22%, rgba(255, 255, 255, 0.98), transparent 34%),
+    linear-gradient(180deg, #fafafa 0%, var(--background) 58%, #e9ecef 100%);
+}
+
+body {
+  min-width: 320px;
+  min-height: 100vh;
+  margin: 0;
+  color: var(--text);
+  font-family: Inter, Pretendard, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+}
+
+body.modal-open {
+  overflow: hidden;
+}
+
+button,
+input {
+  color: inherit;
+  font: inherit;
+}
+
+button {
+  touch-action: manipulation;
+}
+
+.dictionary {
+  width: min(100%, 560px);
+  min-height: 100vh;
+  margin: 0 auto;
+  padding: max(28px, env(safe-area-inset-top)) 20px
+    calc(52px + env(safe-area-inset-bottom));
+}
+
+/* Поиск и плюс образуют одну строку даже на небольшом телефоне. */
+.top-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 54px;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 46px;
+}
+
+/* Поле поиска занимает всё оставшееся место и остаётся визуально лёгким. */
+.search {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  min-height: 54px;
+  padding: 0 16px;
+  border: 1px solid rgba(255, 255, 255, 0.92);
+  border-radius: var(--medium-radius);
+  background: var(--surface);
+  box-shadow: var(--soft-shadow);
+  backdrop-filter: blur(18px);
+}
+
+.search:focus-within {
+  border-color: rgba(23, 25, 28, 0.18);
+  box-shadow: 0 20px 55px rgba(29, 35, 42, 0.13);
+}
+
+.search__icon {
+  width: 21px;
+  height: 21px;
+  flex: 0 0 auto;
+  fill: none;
+  stroke: var(--muted);
+  stroke-linecap: round;
+  stroke-width: 1.7;
+}
+
+.search__input {
+  width: 100%;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  outline: 0;
+  font-size: 1rem;
+  font-weight: 400;
+  background: transparent;
+}
+
+.search__input::placeholder {
+  color: #a0a4aa;
+}
+
+.add-button {
+  display: grid;
+  width: 54px;
+  height: 54px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  border-radius: 18px;
+  place-items: center;
+  color: white;
+  background: var(--dark);
+  box-shadow: var(--dark-glow);
+  cursor: pointer;
+  transition: transform 160ms ease, box-shadow 160ms ease;
+}
+
+.add-button:hover {
+  box-shadow: 0 18px 42px rgba(23, 25, 28, 0.26);
+}
+
+.add-button:active {
+  transform: scale(0.94);
+}
+
+.add-button:focus-visible,
+.button:focus-visible {
+  outline: 3px solid rgba(23, 25, 28, 0.18);
+  outline-offset: 4px;
+}
+
+.add-button svg {
+  width: 24px;
+  height: 24px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-width: 1.65;
+}
+
+.words-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  padding: 0 4px;
+}
+
+.words-heading h1 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+.words-count {
+  display: grid;
+  min-width: 30px;
+  height: 30px;
+  padding: 0 9px;
+  border-radius: 999px;
+  place-items: center;
+  color: var(--muted);
+  font-size: 0.78rem;
+  background: rgba(255, 255, 255, 0.64);
+}
+
+.words-list {
+  display: grid;
+  gap: 10px;
+}
+
+.word-card {
+  display: flex;
+  width: 100%;
+  min-height: 76px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 19px;
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  border-radius: var(--medium-radius);
+  background: var(--surface);
+  box-shadow: 0 12px 32px rgba(29, 35, 42, 0.06);
+  backdrop-filter: blur(16px);
+  color: inherit;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+  transition: transform 160ms ease, box-shadow 160ms ease;
+}
+
+.word-card:hover {
+  box-shadow: 0 15px 36px rgba(29, 35, 42, 0.1);
+}
+
+.word-card:active {
+  transform: scale(0.985);
+}
+
+.word-card:focus-visible {
+  outline: 3px solid rgba(23, 25, 28, 0.14);
+  outline-offset: 3px;
+}
+
+.word-card__word {
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-size: 1.16rem;
+  font-weight: 450;
+}
+
+.word-card__status {
+  flex: 0 0 auto;
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+
+.empty-state {
+  padding: 34px 24px;
+  border: 1px dashed rgba(23, 25, 28, 0.1);
+  border-radius: var(--large-radius);
+  text-align: center;
+}
+
+.empty-state[hidden] {
+  display: none;
+}
+
+.empty-state__title {
+  margin: 0 0 7px;
+  font-size: 0.94rem;
+}
+
+.empty-state__text {
+  max-width: 290px;
+  margin: 0 auto;
+  color: var(--muted);
+  font-size: 0.8rem;
+  line-height: 1.55;
+}
+
+/* Всплывающее окно выезжает снизу на телефоне. */
+.modal {
+  position: fixed;
+  z-index: 10;
+  inset: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 14px;
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity 180ms ease, visibility 180ms ease;
+}
+
+.modal--open {
+  visibility: visible;
+  opacity: 1;
+}
+
+.modal__backdrop {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  background: rgba(18, 20, 23, 0.28);
+  backdrop-filter: blur(7px);
+  cursor: pointer;
+}
+
+.modal__card {
+  position: relative;
+  width: min(100%, 520px);
+  padding: 12px 22px calc(22px + env(safe-area-inset-bottom));
+  border: 1px solid rgba(255, 255, 255, 0.88);
+  border-radius: 30px;
+  background: rgba(250, 250, 250, 0.95);
+  box-shadow: 0 30px 80px rgba(17, 20, 24, 0.22);
+  transform: translateY(26px);
+  transition: transform 220ms ease;
+}
+
+.modal--open .modal__card {
+  transform: translateY(0);
+}
+
+.modal__handle {
+  width: 40px;
+  height: 4px;
+  margin: 0 auto 24px;
+  border-radius: 99px;
+  background: #d6d8db;
+}
+
+.modal__card h2 {
+  margin: 0 0 8px;
+  font-size: 1.3rem;
+  font-weight: 500;
+}
+
+.modal__description {
+  margin: 0 0 24px;
+  color: var(--muted);
+  font-size: 0.83rem;
+  line-height: 1.55;
+}
+
+.word-form__label {
+  display: block;
+  margin: 0 0 9px 3px;
+  color: #60656c;
+  font-size: 0.76rem;
+}
+
+.word-form__input {
+  width: 100%;
+  height: 58px;
+  padding: 0 17px;
+  border: 1px solid var(--line);
+  border-radius: 17px;
+  outline: 0;
+  background: var(--surface-solid);
+}
+
+.word-form__input:focus {
+  border-color: rgba(23, 25, 28, 0.28);
+  box-shadow: 0 0 0 4px rgba(23, 25, 28, 0.04);
+}
+
+.word-form__actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.button {
+  min-height: 54px;
+  border: 0;
+  border-radius: 17px;
+  cursor: pointer;
+}
+
+.button:active {
+  transform: scale(0.97);
+}
+
+.button--light {
+  border: 1px solid var(--line);
+  background: white;
+}
+
+.button--dark {
+  color: white;
+  background: var(--dark);
+  box-shadow: 0 10px 28px rgba(23, 25, 28, 0.18);
+}
+
+.button--dark:hover {
+  background: var(--dark-hover);
+}
+
+/* Содержимое будущей подробной карточки слова. */
+.details-card {
+  max-height: calc(100dvh - 28px);
+  overflow-y: auto;
+  /* Карточка продолжает прокручиваться, но полоса справа не отображается. */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.details-card::-webkit-scrollbar {
+  display: none;
+}
+
+.delete-word-button {
+  display: block;
+  min-height: 34px;
+  margin: 0 auto 26px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 999px;
+  color: white;
+  font-size: 0.72rem;
+  background: var(--dark);
+  box-shadow: 0 8px 22px rgba(23, 25, 28, 0.18);
+  cursor: pointer;
+}
+
+.delete-word-button:active {
+  transform: scale(0.95);
+}
+
+.delete-word-button:focus-visible {
+  outline: 3px solid rgba(23, 25, 28, 0.18);
+  outline-offset: 3px;
+}
+
+.details-card__heading {
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.details-card__heading h2 {
+  margin-bottom: 6px;
+  font-size: 1.7rem;
+}
+
+.details-card__heading p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.76rem;
+}
+
+.details-content {
+  display: grid;
+  gap: 10px;
+}
+
+.details-section {
+  display: grid;
+  grid-template-columns: 27px minmax(0, 1fr);
+  gap: 11px;
+  padding: 17px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.details-section__number {
+  padding-top: 1px;
+  color: #a3a7ac;
+  font-size: 0.65rem;
+  letter-spacing: 0.04em;
+}
+
+.details-section__label {
+  display: block;
+  margin-bottom: 8px;
+  color: #646970;
+  font-size: 0.7rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.details-placeholder {
+  margin: 0;
+  color: #777c83;
+  font-size: 0.82rem;
+  line-height: 1.55;
+}
+
+.formality-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 15px;
+  padding-top: 13px;
+  border-top: 1px solid var(--line);
+  color: #777c83;
+  font-size: 0.74rem;
+}
+
+.formality-badge,
+.example-item__tag {
+  padding: 5px 9px;
+  border-radius: 999px;
+  color: #5d6268;
+  background: #f0f1f2;
+  white-space: nowrap;
+}
+
+.examples-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 15px;
+}
+
+.example-item {
+  padding: 13px 14px;
+  border: 1px solid rgba(23, 25, 28, 0.06);
+  border-radius: 14px;
+  background: rgba(250, 250, 250, 0.82);
+}
+
+.example-item__heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 11px;
+  color: #969aa0;
+  font-size: 0.64rem;
+}
+
+.example-item__tag {
+  padding: 4px 7px;
+  font-size: 0.61rem;
+}
+
+.example-item__korean {
+  margin: 0 0 4px;
+  color: #5f646a;
+  font-size: 0.82rem;
+}
+
+.example-item__translation {
+  margin: 0;
+  color: #a0a4a9;
+  font-size: 0.72rem;
+}
+
+.details-close {
+  width: 100%;
+  margin-top: 18px;
+}
+
+/* На широком экране окно показывается по центру, а контент остаётся компактным. */
+@media (min-width: 700px) {
+  .dictionary {
+    padding-top: 52px;
+  }
+
+  .modal {
+    align-items: center;
+  }
+
+  .modal__card {
+    padding: 18px 28px 28px;
+  }
+
+  .modal__handle {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}
