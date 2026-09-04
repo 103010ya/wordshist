@@ -164,7 +164,8 @@ export const analyzeKoreanWord = onCall(
     try {
       const ai = new GoogleGenAI({ apiKey: geminiApiKey.value() });
       const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash",
+        // Google закрыл старую модель для новых API-ключей.
+        model: "gemini-3.6-flash",
         contents: createPrompt(word),
         config: {
           temperature: 0.25,
