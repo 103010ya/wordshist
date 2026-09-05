@@ -167,8 +167,13 @@ async function requestWordTranslation() {
 
   try {
     // Лимитируемый запрос выполняется только здесь и только после нажатия.
-    const details = await requestCloudTranslation(selectedWord.id);
-    selectedWord.details = details;
+    const analysis = await requestCloudTranslation(selectedWord.id);
+    // Исходный запрос остаётся доступен для русского поиска.
+    selectedWord.originalInput =
+      analysis.originalInput || selectedWord.originalInput || selectedWord.word;
+    selectedWord.word = analysis.koreanWord || selectedWord.word;
+    selectedWord.details = analysis.details || analysis;
+    detailsWord.textContent = selectedWord.word;
     saveWords();
     renderWordDetails(selectedWord);
     renderWords();
@@ -394,8 +399,8 @@ function getKoreanInitials(text) {
   }).join("");
 }
 
-function wordMatchesSearch(word, query) {
-  const normalizedWord = word.toLocaleLowerCase();
+function textMatchesSearch(text, query) {
+  const normalizedWord = text.toLocaleLowerCase();
   const normalizedQuery = query.toLocaleLowerCase();
 
   return (
@@ -407,10 +412,24 @@ function wordMatchesSearch(word, query) {
   );
 }
 
+function wordMatchesSearch(wordItem, query) {
+  const details = wordItem.details || DEMO_WORD_DETAILS[wordItem.word];
+  const searchableTexts = [wordItem.word, details?.translation];
+
+  // Английский можно вводить, но после разбора поиск ориентируется на русский и корейский.
+  if (/[Ѐ-ӿ㄰-㆏가-힣]/iu.test(wordItem.originalInput || "")) {
+    searchableTexts.push(wordItem.originalInput);
+  }
+
+  return searchableTexts
+    .filter(Boolean)
+    .some((text) => textMatchesSearch(text, query));
+}
+
 function renderWords() {
   const query = searchInput.value.trim().toLocaleLowerCase();
   const visibleWords = words.filter((item) =>
-    wordMatchesSearch(item.word, query),
+    wordMatchesSearch(item, query),
   );
 
   // Очищаем старые карточки перед новой отрисовкой списка.

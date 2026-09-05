@@ -9,3 +9,6 @@ functions/firebase-debug.log
 functions/.env
 functions/.env.*
 functions/.secret.local
+
+# Служебные файлы macOS не относятся к проекту.
+.DS_Store

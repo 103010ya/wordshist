@@ -91,6 +91,7 @@ export async function saveCloudWord(userId, word) {
     {
       id: word.id,
       word: word.word,
+      originalInput: word.originalInput || word.word,
       createdAt: word.createdAt,
       details: word.details || null,
       updatedAt: firestore.serverTimestamp(),
@@ -114,6 +115,7 @@ export async function uploadCloudWords(userId, words) {
     batch.set(firestore.doc(db, "users", userId, "words", word.id), {
       id: word.id,
       word: word.word,
+      originalInput: word.originalInput || word.word,
       createdAt: word.createdAt,
       details: word.details || null,
       updatedAt: firestore.serverTimestamp(),
