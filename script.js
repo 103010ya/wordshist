@@ -150,10 +150,25 @@ function openWordDetails(wordId) {
   deleteWordButton.focus();
 }
 
-async function requestWordTranslation() {
-  const selectedWord = words.find((item) => item.id === selectedWordId);
-  if (!selectedWord) return;
+// Одна общая функция обслуживает перевод и из карточки, и из общего списка.
+async function translateWord(wordId) {
+  const wordItem = words.find((item) => item.id === wordId);
+  if (!wordItem) return null;
 
+  // Лимитируемый запрос выполняется только после явного нажатия пользователя.
+  const analysis = await requestCloudTranslation(wordItem.id);
+  // Исходный запрос остаётся доступен для русского поиска.
+  wordItem.originalInput =
+    analysis.originalInput || wordItem.originalInput || wordItem.word;
+  wordItem.word = analysis.koreanWord || wordItem.word;
+  wordItem.details = analysis.details || analysis;
+  saveWords();
+  renderWords();
+
+  return wordItem;
+}
+
+async function requestWordTranslation() {
   if (!currentUser) {
     translationRequestMessage.textContent =
       "Сначала войдите через Google, чтобы запросить перевод.";
@@ -166,17 +181,11 @@ async function requestWordTranslation() {
     "Помощник разбирает слово. Это может занять несколько секунд.";
 
   try {
-    // Лимитируемый запрос выполняется только здесь и только после нажатия.
-    const analysis = await requestCloudTranslation(selectedWord.id);
-    // Исходный запрос остаётся доступен для русского поиска.
-    selectedWord.originalInput =
-      analysis.originalInput || selectedWord.originalInput || selectedWord.word;
-    selectedWord.word = analysis.koreanWord || selectedWord.word;
-    selectedWord.details = analysis.details || analysis;
-    detailsWord.textContent = selectedWord.word;
-    saveWords();
-    renderWordDetails(selectedWord);
-    renderWords();
+    const translatedWord = await translateWord(selectedWordId);
+    if (!translatedWord) return;
+
+    detailsWord.textContent = translatedWord.word;
+    renderWordDetails(translatedWord);
     translationRequestMessage.textContent = "Разбор сохранён в вашем словаре.";
   } catch (error) {
     console.error("Не удалось получить перевод:", error);
@@ -184,6 +193,30 @@ async function requestWordTranslation() {
   } finally {
     requestTranslationButton.disabled = false;
     requestTranslationButton.textContent = "Запросить перевод";
+  }
+}
+
+async function requestQuickTranslation(wordId, quickButton) {
+  if (!currentUser) {
+    openProfile();
+    profileMessage.textContent =
+      "Войдите через Google, чтобы запросить перевод.";
+    return;
+  }
+
+  // Состояние видно прямо в маленькой кнопке, не открывая карточку.
+  quickButton.disabled = true;
+  quickButton.textContent = "…";
+  quickButton.setAttribute("aria-label", "Выполняется перевод");
+
+  try {
+    await translateWord(wordId);
+  } catch (error) {
+    console.error("Не удалось получить быстрый перевод:", error);
+    quickButton.disabled = false;
+    quickButton.textContent = "↻";
+    quickButton.setAttribute("aria-label", "Повторить запрос перевода");
+    quickButton.title = getTranslationErrorMessage(error);
   }
 }
 
@@ -436,12 +469,15 @@ function renderWords() {
   wordsList.replaceChildren();
 
   visibleWords.forEach((item) => {
-    // Карточка является кнопкой, поэтому ей удобно пользоваться и с клавиатуры.
-    const card = document.createElement("button");
+    // Внутри карточки две отдельные кнопки: открытие и быстрый перевод.
+    const card = document.createElement("article");
     card.className = "word-card";
-    card.type = "button";
-    card.setAttribute("aria-label", `Открыть слово ${item.word}`);
     card.addEventListener("click", () => openWordDetails(item.id));
+
+    const openCardButton = document.createElement("button");
+    openCardButton.className = "word-card__open";
+    openCardButton.type = "button";
+    openCardButton.setAttribute("aria-label", `Открыть слово ${item.word}`);
 
     const word = document.createElement("span");
     word.className = "word-card__word";
@@ -460,7 +496,28 @@ function renderWords() {
       wordContent.append(translation);
     }
 
-    card.append(wordContent);
+    openCardButton.append(wordContent);
+    card.append(openCardButton);
+
+    // Кнопка показывается только пока у слова ещё нет готового разбора.
+    if (!details?.translation) {
+      const quickTranslateButton = document.createElement("button");
+      quickTranslateButton.className = "word-card__quick-translate";
+      quickTranslateButton.type = "button";
+      quickTranslateButton.textContent = "✦";
+      quickTranslateButton.setAttribute(
+        "aria-label",
+        `Запросить перевод слова ${item.word}`,
+      );
+      quickTranslateButton.title = "Запросить перевод";
+      quickTranslateButton.addEventListener("click", (event) => {
+        // Не открываем подробности, когда нажата отдельная кнопка перевода.
+        event.stopPropagation();
+        requestQuickTranslation(item.id, quickTranslateButton);
+      });
+      card.append(quickTranslateButton);
+    }
+
     wordsList.append(card);
   });
 
