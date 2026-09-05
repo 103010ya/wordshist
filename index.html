@@ -2,7 +2,10 @@
 <html lang="ru">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+    />
     <meta name="theme-color" content="#f5f6f7" />
     <meta
       name="description"
@@ -67,15 +70,18 @@
           <span id="wordsCount" class="words-count">0</span>
         </div>
 
-        <div id="wordsList" class="words-list"></div>
+        <!-- Прокручивается только эта область, а шапка остаётся на месте. -->
+        <div class="words-scroll">
+          <div id="wordsList" class="words-list"></div>
 
-        <div id="emptyState" class="empty-state">
-          <p id="emptyStateTitle" class="empty-state__title">
-            Словарь пока пуст
-          </p>
-          <p id="emptyStateText" class="empty-state__text">
-            Нажмите на плюс и сохраните первое корейское слово.
-          </p>
+          <div id="emptyState" class="empty-state">
+            <p id="emptyStateTitle" class="empty-state__title">
+              Словарь пока пуст
+            </p>
+            <p id="emptyStateText" class="empty-state__text">
+              Нажмите на плюс и сохраните первое корейское слово.
+            </p>
+          </div>
         </div>
       </section>
     </main>
