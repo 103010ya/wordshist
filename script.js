@@ -21,6 +21,8 @@ const modal = document.querySelector("#modal");
 const wordForm = document.querySelector("#wordForm");
 const wordInput = document.querySelector("#wordInput");
 const wordsList = document.querySelector("#wordsList");
+const wordsScroll = document.querySelector(".words-scroll");
+const scrollToTopButton = document.querySelector("#scrollToTopButton");
 const wordsCount = document.querySelector("#wordsCount");
 const emptyState = document.querySelector("#emptyState");
 const emptyStateTitle = document.querySelector("#emptyStateTitle");
@@ -30,6 +32,10 @@ const wordDetailsBackdrop = document.querySelector("#wordDetailsBackdrop");
 const detailsWord = document.querySelector("#detailsWord");
 const deleteWordButton = document.querySelector("#deleteWordButton");
 const closeDetailsButton = document.querySelector("#closeDetailsButton");
+const closeDetailsBottomButton = document.querySelector(
+  "#closeDetailsBottomButton",
+);
+const detailsCard = wordDetailsModal.querySelector(".details-card");
 const requestTranslationButton = document.querySelector(
   "#requestTranslationButton",
 );
@@ -144,6 +150,8 @@ function openWordDetails(wordId) {
   detailsWord.textContent = selectedWord.word;
   translationRequestMessage.textContent = "";
   renderWordDetails(selectedWord);
+  // Каждое слово всегда открывается с заголовка, а не с позиции прошлой карточки.
+  detailsCard.scrollTop = 0;
   wordDetailsModal.classList.add("modal--open");
   wordDetailsModal.setAttribute("aria-hidden", "false");
   document.body.classList.add("modal-open");
@@ -151,12 +159,47 @@ function openWordDetails(wordId) {
 }
 
 // Одна общая функция обслуживает перевод и из карточки, и из общего списка.
+function waitBeforeRetry(milliseconds) {
+  return new Promise((resolve) => window.setTimeout(resolve, milliseconds));
+}
+
+function isTemporaryTranslationError(error) {
+  return [
+    "functions/unavailable",
+    "functions/deadline-exceeded",
+    "functions/unknown",
+  ].includes(error?.code);
+}
+
+async function requestTranslationWithRetry(wordId) {
+  // Второй вызов нужен только при временном обрыве связи с Firebase.
+  const retryDelays = [0, 1000];
+
+  for (let attempt = 0; attempt < retryDelays.length; attempt += 1) {
+    if (retryDelays[attempt] > 0) {
+      await waitBeforeRetry(retryDelays[attempt]);
+    }
+
+    try {
+      return await requestCloudTranslation(wordId);
+    } catch (error) {
+      const isLastAttempt = attempt === retryDelays.length - 1;
+      if (!isTemporaryTranslationError(error) || isLastAttempt) throw error;
+    }
+  }
+
+  throw new Error("Не удалось получить перевод");
+}
+
 async function translateWord(wordId) {
   const wordItem = words.find((item) => item.id === wordId);
   if (!wordItem) return null;
 
+  // Сначала дожидаемся записи слова: функция больше не получит случайный 404.
+  await saveCloudWord(currentUser.uid, wordItem);
+
   // Лимитируемый запрос выполняется только после явного нажатия пользователя.
-  const analysis = await requestCloudTranslation(wordItem.id);
+  const analysis = await requestTranslationWithRetry(wordItem.id);
   // Исходный запрос остаётся доступен для русского поиска.
   wordItem.originalInput =
     analysis.originalInput || wordItem.originalInput || wordItem.word;
@@ -535,6 +578,19 @@ function renderWords() {
   }
 }
 
+function updateScrollTopButton() {
+  // На самом верху кнопка не нужна и не отвлекает от карточек.
+  scrollToTopButton.hidden = wordsScroll.scrollTop < 220;
+}
+
+function scrollWordsToTop() {
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  wordsScroll.scrollTo({
+    top: 0,
+    behavior: reduceMotion ? "auto" : "smooth",
+  });
+}
+
 async function addWord(event) {
   event.preventDefault();
 
@@ -570,6 +626,7 @@ wordForm.addEventListener("submit", addWord);
 searchInput.addEventListener("input", renderWords);
 wordDetailsBackdrop.addEventListener("click", closeWordDetails);
 closeDetailsButton.addEventListener("click", closeWordDetails);
+closeDetailsBottomButton.addEventListener("click", closeWordDetails);
 deleteWordButton.addEventListener("click", deleteSelectedWord);
 requestTranslationButton.addEventListener("click", requestWordTranslation);
 openProfileButton.addEventListener("click", openProfile);
@@ -577,6 +634,8 @@ profileBackdrop.addEventListener("click", closeProfile);
 closeProfileButton.addEventListener("click", closeProfile);
 googleLoginButton.addEventListener("click", handleGoogleLogin);
 logoutButton.addEventListener("click", handleLogout);
+wordsScroll.addEventListener("scroll", updateScrollTopButton, { passive: true });
+scrollToTopButton.addEventListener("click", scrollWordsToTop);
 
 // Escape — привычный способ закрыть всплывающее окно с клавиатуры.
 document.addEventListener("keydown", (event) => {

@@ -127,7 +127,12 @@ function validateAnalysis(analysis) {
 
 function isTemporaryGeminiError(error) {
   const message = error instanceof Error ? error.message : String(error);
-  return error?.status === 503 || message.includes('"code":503');
+  const temporaryStatuses = [500, 502, 503, 504];
+
+  return temporaryStatuses.some(
+    (status) =>
+      error?.status === status || message.includes(`"code":${status}`),
+  );
 }
 
 function wait(milliseconds) {
@@ -135,8 +140,8 @@ function wait(milliseconds) {
 }
 
 async function generateDetailsWithRetry(ai, word) {
-  // Две короткие попытки быстрее, чем долгое ожидание перегруженной модели.
-  const retryDelays = [0, 1200];
+  // Три короткие попытки сглаживают редкие временные сбои Gemini.
+  const retryDelays = [0, 900, 2200];
 
   for (let attempt = 0; attempt < retryDelays.length; attempt += 1) {
     if (retryDelays[attempt] > 0) {
