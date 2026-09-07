@@ -14,7 +14,7 @@
       content="Личный словарь для изучения корейских слов"
     />
     <title>Мой словарь</title>
-    <link rel="stylesheet" href="styles.css?v=20260906-1" />
+    <link rel="stylesheet" href="styles.css?v=20260907-1" />
   </head>
 
   <body>
@@ -112,24 +112,20 @@
       ></button>
 
       <section
-        class="modal__card"
+        class="modal__card add-word-card"
         role="dialog"
         aria-modal="true"
         aria-labelledby="modalTitle"
       >
         <div class="modal__handle" aria-hidden="true"></div>
         <h2 id="modalTitle">Новое слово</h2>
-        <p class="modal__description">
-          Пока мы сохраняем только слово. Подробный разбор и перевод добавим
-          следующим шагом.
-        </p>
 
         <form id="wordForm" class="word-form">
-          <label class="word-form__label" for="wordInput">Слово</label>
           <input
             id="wordInput"
             class="word-form__input"
             type="text"
+            aria-label="Новое слово"
             placeholder="Например, 설레다"
             maxlength="80"
             autocomplete="off"
@@ -213,9 +209,10 @@
                 употребляется.
               </p>
 
-              <div class="formality-row">
-                <span>Формальность</span>
-                <span id="detailsFormality" class="formality-badge">Уровень</span>
+              <!-- Формальность выглядит как обычный текст, без отдельного тега. -->
+              <div class="formality-block">
+                <span class="details-section__label">Формальность</span>
+                <p id="detailsFormality" class="details-placeholder">Уровень</p>
               </div>
             </div>
           </section>
@@ -223,10 +220,6 @@
           <section class="details-section details-section--examples">
             <div>
               <span class="details-section__label">Примеры</span>
-              <p class="details-placeholder">
-                Четыре коротких предложения на разные темы и с разными формами
-                слова.
-              </p>
 
               <div class="examples-list">
                 <article class="example-item">

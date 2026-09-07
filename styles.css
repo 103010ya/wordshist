@@ -511,18 +511,9 @@ button {
   font-weight: 500;
 }
 
-.modal__description {
-  margin: 0 0 24px;
-  color: var(--muted);
-  font-size: 0.83rem;
-  line-height: 1.55;
-}
-
-.word-form__label {
-  display: block;
-  margin: 0 0 9px 3px;
-  color: #60656c;
-  font-size: 0.76rem;
+.add-word-card h2 {
+  margin-bottom: 24px;
+  text-align: center;
 }
 
 .word-form__input {
@@ -692,19 +683,12 @@ button {
   line-height: 1.55;
 }
 
-.formality-row {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
+.formality-block {
   margin-top: 15px;
   padding-top: 13px;
   border-top: 1px solid var(--line);
-  color: #777c83;
-  font-size: 0.74rem;
 }
 
-.formality-badge,
 .example-item__tag {
   padding: 5px 9px;
   border-radius: 999px;
@@ -712,16 +696,10 @@ button {
   background: #f0f1f2;
 }
 
-.formality-badge {
-  max-width: 68%;
-  overflow-wrap: anywhere;
-  text-align: right;
-}
-
 .examples-list {
   display: grid;
   gap: 8px;
-  margin-top: 15px;
+  margin-top: 4px;
 }
 
 .example-item {
