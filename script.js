@@ -591,12 +591,7 @@ function scrollWordsToTop() {
   });
 }
 
-async function addWord(event) {
-  event.preventDefault();
-
-  const newWord = wordInput.value.trim();
-  if (!newWord) return;
-
+function createNewWord(newWord) {
   // Новое слово добавляем в начало, чтобы оно сразу было видно пользователю.
   const newWordItem = {
     id: crypto.randomUUID(),
@@ -608,8 +603,11 @@ async function addWord(event) {
   saveWords();
   searchInput.value = "";
   renderWords();
-  closeModal();
 
+  return newWordItem;
+}
+
+async function saveNewWordToCloud(newWordItem) {
   if (currentUser) {
     try {
       await saveCloudWord(currentUser.uid, newWordItem);
@@ -619,7 +617,42 @@ async function addWord(event) {
   }
 }
 
-openModalButton.addEventListener("click", openModal);
+async function addWord(event) {
+  event.preventDefault();
+
+  const newWord = wordInput.value.trim();
+  if (!newWord) return;
+
+  const newWordItem = createNewWord(newWord);
+  closeModal();
+  await saveNewWordToCloud(newWordItem);
+}
+
+async function handleAddButtonClick() {
+  const searchQuery = searchInput.value.trim();
+  const normalizedQuery = searchQuery.toLocaleLowerCase();
+  const hasVisibleWords = words.some((item) =>
+    wordMatchesSearch(item, normalizedQuery),
+  );
+
+  // Если поиск ничего не нашёл, плюс сразу превращает запрос в новую карточку.
+  if (searchQuery && !hasVisibleWords) {
+    openModalButton.disabled = true;
+    const newWordItem = createNewWord(searchQuery);
+
+    try {
+      await saveNewWordToCloud(newWordItem);
+    } finally {
+      openModalButton.disabled = false;
+    }
+    return;
+  }
+
+  // При пустом поиске или найденных результатах работает привычное окно.
+  openModal();
+}
+
+openModalButton.addEventListener("click", handleAddButtonClick);
 closeModalButton.addEventListener("click", closeModal);
 modalBackdrop.addEventListener("click", closeModal);
 wordForm.addEventListener("submit", addWord);
